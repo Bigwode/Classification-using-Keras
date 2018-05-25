@@ -69,6 +69,7 @@ def train(X_train, X_test, y_train, y_test):
         steps_per_epoch=nb_train_samples // batch_size,
         epochs=epochs)
 
+
     model.save('first_blood.h5')
 
 
