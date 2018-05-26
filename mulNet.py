@@ -1,13 +1,13 @@
 # coding:utf-8
 import keras
-from keras.applications import vgg16
+from keras.applications import vgg16, xception
 from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
 from keras.layers import Input, Embedding, Dropout, Flatten, Dense
 from keras.models import Model
 
 
-
+# 未使用预训练模型
 def build_normal(img_width, img_height):
     input_image = Input(shape=(img_width, img_height, 3))
     x1 = (Conv2D(32, (3, 3), activation='relu'))(input_image)
@@ -45,6 +45,7 @@ def build_normal(img_width, img_height):
 # build(128, 128)
 
 
+# 使用预训练模型
 def build_vgg_mod_wrong(img_width, img_height):
 
     vgg_model = vgg16.VGG16(include_top=False, weights='imagenet',
@@ -64,46 +65,62 @@ def build_vgg_mod_wrong(img_width, img_height):
     predictions = Dense(6, activation='softmax')(x)
     model_all = Model(inputs=vgg_model.input, outputs=predictions)
 
-    for layer in model_all.layers[:11]:
-        layer.trainable = False
-    for layer in model_all.layers[11:]:
-        layer.trainable = True
 
-    return model_all
+    return vgg_model, model_all
 
 
 def build_vgg_mod(img_width, img_height):
 
-    vgg_model = vgg16.VGG16(include_top=False, weights='imagenet',
-                 input_tensor=None, input_shape=(img_width, img_height, 3))
+    # image_input = Input(shape=(224, 224, 3))
+    vgg_model = vgg16.VGG16(input_tensor=None, weights='imagenet',
+                            include_top=False, input_shape=(img_width, img_height, 3))
 
+    # model_mid = Model(inputs =vgg_model.input, outputs= vgg_model.get_layer('block3_pool').output)
+    x1 = vgg_model.get_layer('block3_pool').output  # (None, 14, 14, 512)
     # 任意中间层中抽取特征
-    model = Model(inputs=vgg_model.input, outputs=vgg_model.get_layer('block3_pool').output)
-    x1 = model.output  # (N, 28, 28, 256)
+    # model = Model(inputs=image_input, outputs=vgg_model.get_layer('block3_pool').output)
+    # x1 = model.output  # (N, 28, 28, 256)
+    # x1 = vgg_model.get_layer('block4_pool').output
 
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x1)
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x)
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x)
     x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 
-    # Block 5
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x)
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x)
     x = Conv2D(512, (3, 3), activation='relu', padding='same')(x)
     x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 
-    x2 = MaxPooling2D(pool_size=(4, 4), strides=(4, 4))(x1)  # # max pooling 到 (N, 7, 7, 256)
-    merged_vector = keras.layers.concatenate([x, x2], axis=-1)
+    # x2 = MaxPooling2D((4, 4), strides=(4, 4))(x1)  # # max pooling 到 (N, 7, 7, 256)
+    # merged_vector = keras.layers.concatenate([x, x2], axis=-1)
 
-    x = GlobalAveragePooling2D()(merged_vector)
-    x = Dropout(0.5)(x)
+    x = GlobalAveragePooling2D()(x)
+    # x = Dropout(0.5)(x)
     x = Dense(100, activation='relu')(x)
-    x = Dropout(0.5)(x)
+    # x = Dropout(0.5)(x)
     predictions = Dense(6, activation='softmax')(x)
     model_all = Model(inputs=vgg_model.input, outputs=predictions)
 
-    for layer in model.layers:
-        layer.trainable = False
 
-    return model_all
+    return vgg_model, model_all
 
+
+def build_vgg_raw(img_width, img_height):
+
+    # img_input = Input(shape=(224,224,3))
+    vgg_model = vgg16.VGG16(input_tensor=None, weights='imagenet',
+                            include_top=False, input_shape=(img_width, img_height, 3))
+    # print(vgg_model.summary())
+    x = vgg_model.output
+
+    x = Conv2D(256, (1, 1), activation='relu', padding='same')(x)
+    x = GlobalAveragePooling2D()(x)
+    # x = Dropout(0.5)(x)
+    x = Dense(100, activation='relu')(x)
+    # x = Dropout(0.5)(x)
+    predictions = Dense(6, activation='softmax')(x)
+    model_all = Model(inputs=vgg_model.input, outputs=predictions)
+
+
+    return vgg_model, model_all

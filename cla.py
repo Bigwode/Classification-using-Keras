@@ -1,7 +1,8 @@
 # coding:utf-8
 import keras
 from keras.preprocessing.image import ImageDataGenerator
-from sklearn.model_selection import train_test_split
+from sklearn.cross_validation import train_test_split
+import matplotlib.pyplot as plt
 from keras import backend as K
 from keras import optimizers
 import numpy as np
@@ -15,7 +16,7 @@ img_width, img_height = 224, 224
 
 nb_train_samples = 1126
 # nb_validation_samples = 60
-epochs = 100
+epochs = 10
 batch_size = 32
 
 if K.image_data_format() == 'channels_first':
@@ -25,7 +26,7 @@ else:
 
 
 # model = mulNet.build_normal(img_width, img_height)
-model = mulNet.build_vgg_mod(img_width, img_height)
+base_model, model = mulNet.build_vgg_raw(img_width, img_height)
 
 
 # print(model.summary())
@@ -33,11 +34,11 @@ model = mulNet.build_vgg_mod(img_width, img_height)
 
 def train(X_train, X_test, y_train, y_test):
 
-    opt = optimizers.RMSprop(lr=0.001 ,decay=1e-6)
-    model.compile(loss='categorical_crossentropy', # 多分类
-                  optimizer=opt,  # 'rmsprop'
-                  # loss_weights=[0.1, 0.9],
-                  metrics=['accuracy'])
+    # opt = optimizers.RMSprop(lr=0.001 ,decay=1e-6)
+    # model.compile(loss='categorical_crossentropy', # 多分类
+    #               optimizer=opt,  # 'rmsprop'
+    #               # loss_weights=[0.1, 0.9],
+    #               metrics=['accuracy'])
 
     # this is the augmentation configuration we will use for training
     train_datagen = ImageDataGenerator(
@@ -66,7 +67,35 @@ def train(X_train, X_test, y_train, y_test):
     #     batch_size=batch_size,
     #     class_mode='categorical')
 
-    model.fit_generator(
+    print('训练顶层分类器')
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    opt = optimizers.RMSprop(lr=0.001 ,decay=1e-6)
+    model.compile(loss='categorical_crossentropy', # 多分类
+                  optimizer=opt,  # 'rmsprop'
+                  # loss_weights=[0.1, 0.9],
+                  metrics=['accuracy'])
+
+    history_t1 = model.fit_generator(
+        train_generator,
+        validation_data=val_generator,
+        steps_per_epoch=nb_train_samples // batch_size,
+        epochs=epochs)
+
+    print('对顶层分类器fine-tune')
+    for layer in model.layers[:11]:
+        layer.trainable = False
+    for layer in model.layers[11:]:
+        layer.trainable = True
+
+    opt = optimizers.SGD(lr=0.0001, momentum=0.9)
+    model.compile(loss='categorical_crossentropy',  # 多分类
+                  optimizer=opt,  # 'rmsprop'
+                  # loss_weights=[0.1, 0.9],
+                  metrics=['accuracy'])
+
+    history_ft = model.fit_generator(
         train_generator,
         validation_data=val_generator,
         steps_per_epoch=nb_train_samples // batch_size,
@@ -74,6 +103,26 @@ def train(X_train, X_test, y_train, y_test):
 
 
     model.save('first_blood.h5')
+    plot_training(history_ft)
+
+
+def plot_training(history):
+    acc = history.history['acc']
+    val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(len(acc))
+
+    plt.plot(epochs, acc, 'r.')
+    plt.plot(epochs, val_acc, 'r')
+    plt.title('Training and validation accuracy')
+
+    plt.figure()
+    plt.plot(epochs, loss, 'r.')
+    plt.plot(epochs, val_loss, 'r-')
+    plt.title('Training and validation loss')
+    plt.show()
+
 
 
 if __name__=='__main__':
