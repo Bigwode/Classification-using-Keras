@@ -25,12 +25,9 @@ else:
 
 
 # model = mulNet.build_normal(img_width, img_height)
-model = mulNet.build_vgg(img_width, img_height)
+model = mulNet.build_vgg_mod(img_width, img_height)
 
-for layer in model.layers[:11]:
-   layer.trainable = False
-for layer in model.layers[11:]:
-   layer.trainable = True
+
 # print(model.summary())
 
 
