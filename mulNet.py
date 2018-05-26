@@ -33,9 +33,12 @@ def build(img_width, img_height):
 
     x52 = GlobalAveragePooling2D()(x42)
     x62 = Dense(64, activation='relu')(x52)
-    merged_vector = keras.layers.concatenate([x51, x62], axis=-1)
+    merged_vector = keras.layers.concatenate([x51, x62], axis=-1)  # (None, 64), (None, 64) -> (none, 128)
     x72 = Dropout(0.5)(merged_vector)
     prediction = Dense(6, activation='softmax')(x72) # 6分类
 
     model = Model(inputs=input_image, outputs=prediction)
+    # print(model.summary())
     return model
+
+# build(128, 128)
