@@ -60,7 +60,10 @@ def build_vgg(img_width, img_height):
 
 
     x = GlobalAveragePooling2D()(merged_vector)
+    x = Dropout(0.5)(x)
     x = Dense(100, activation='relu')(x)
+    x = Dropout(0.5)(x)
     predictions = Dense(6, activation='softmax')(x)
     model_all = Model(inputs=vgg_model.input, outputs=predictions)
     # print(model_all.summary())
+    return model_all
