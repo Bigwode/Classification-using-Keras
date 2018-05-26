@@ -11,7 +11,7 @@ import mulNet
 import load_data
 
 # dimensions of our images.
-img_width, img_height = 128, 128
+img_width, img_height = 224, 224
 
 nb_train_samples = 1126
 # nb_validation_samples = 60
@@ -24,7 +24,8 @@ else:
     input_shape = (img_width, img_height, 3)
 
 
-model = mulNet.build(img_width, img_height)
+# model = mulNet.build_normal(img_width, img_height)
+model = mulNet.build_vgg(img_width, img_height)
 # print(model.summary())
 
 
