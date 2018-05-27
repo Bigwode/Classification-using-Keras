@@ -26,7 +26,7 @@ else:
 
 
 # model = mulNet.build_normal(img_width, img_height)
-base_model, model = mulNet.build_vgg_raw(img_width, img_height)
+base_model, model = mulNet.build_vgg_mod(img_width, img_height)
 
 
 # print(model.summary())
@@ -42,7 +42,7 @@ def train(X_train, X_test, y_train, y_test):
 
     # this is the augmentation configuration we will use for training
     train_datagen = ImageDataGenerator(
-        # rotation_range=30,
+        rotation_range=30,
         # rescale=1. / 255,
         shear_range=0.2,
         zoom_range=0.2,
@@ -68,10 +68,12 @@ def train(X_train, X_test, y_train, y_test):
     #     class_mode='categorical')
 
     print('训练顶层分类器')
+
     for layer in base_model.layers:
         layer.trainable = False
 
-    opt = optimizers.RMSprop(lr=0.001 ,decay=1e-6)
+
+    opt = optimizers.Adam(lr=1e-4 ,decay=1e-6, amsgrad=True)
     model.compile(loss='categorical_crossentropy', # 多分类
                   optimizer=opt,  # 'rmsprop'
                   # loss_weights=[0.1, 0.9],
@@ -84,12 +86,14 @@ def train(X_train, X_test, y_train, y_test):
         epochs=epochs)
 
     print('对顶层分类器fine-tune')
+
     for layer in model.layers[:11]:
         layer.trainable = False
     for layer in model.layers[11:]:
         layer.trainable = True
 
-    opt = optimizers.SGD(lr=0.0001, momentum=0.9)
+
+    opt = optimizers.SGD(lr=1e-5, momentum=0.9)
     model.compile(loss='categorical_crossentropy',  # 多分类
                   optimizer=opt,  # 'rmsprop'
                   # loss_weights=[0.1, 0.9],
@@ -144,3 +148,4 @@ if __name__=='__main__':
     X_train, X_test, y_train, y_test = train_test_split(train_data, train_labels, test_size = 0.3, random_state = 42)
 
     train(X_train, X_test, y_train, y_test)
+    # score = model.evaluate(X_test, y_test, batch_size=32)
