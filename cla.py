@@ -107,7 +107,7 @@ def train(X_train, X_test, y_train, y_test):
 
 
     model.save('first_blood.h5')
-    plot_training(history_ft)
+    # plot_training(history_ft)
 
 
 def plot_training(history):

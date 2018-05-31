@@ -85,6 +85,7 @@ def build_vgg_raw(img_width, img_height):
     vgg_model = vgg16.VGG16(input_tensor=None, weights='imagenet',
                             include_top=False, input_shape=(img_width, img_height, 3))
     # print(vgg_model.summary())
+    # print(vgg_model.trainable_weights)
     for i, layer in enumerate(vgg_model.layers):
         print(i, layer.name)
     x = vgg_model.output
