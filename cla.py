@@ -1,7 +1,7 @@
 # coding:utf-8
 import keras
 from keras.preprocessing.image import ImageDataGenerator
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from keras import backend as K
 from keras import optimizers
@@ -26,7 +26,7 @@ else:
 
 
 # model = mulNet.build_normal(img_width, img_height)
-base_model, model = mulNet.build_vgg_mod(img_width, img_height)
+base_model, model = mulNet.build_vgg_raw(img_width, img_height)
 
 
 # print(model.summary())

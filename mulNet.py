@@ -90,14 +90,15 @@ def build_vgg_raw(img_width, img_height):
         print(i, layer.name)
     x = vgg_model.output
 
-    x = Conv2D(256, (1, 1), activation='relu', padding='same')(x)
-    x = GlobalAveragePooling2D()(x)
+    x = Flatten()(x)
+    # x = Conv2D(256, (1, 1), activation='relu', padding='same')(x)
+    # x = GlobalAveragePooling2D()(x)
     # x = Dropout(0.5)(x)
     x = Dense(100, activation='relu')(x)
     # x = Dropout(0.5)(x)
     predictions = Dense(6, activation='softmax')(x)
     model_all = Model(inputs=vgg_model.input, outputs=predictions)
-
+    print(model_all.summary())
 
     return vgg_model, model_all
 
